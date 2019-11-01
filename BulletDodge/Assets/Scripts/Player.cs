@@ -20,6 +20,7 @@ public class Player {
 	private bool shooting;
 	private float shootTick;
 	private float shootCooldown;
+	private float damageTick;
 	
 	public int health {
 		get => _health; 
@@ -49,10 +50,23 @@ public class Player {
 		_bulletLifetime = 2f;
 	}
 	
+	public void Update(float deltaTime) {
+		Move();
+		Shoot();
+		CheckDead();
+		if (_object && damageTick > 0) {
+			damageTick -= deltaTime;
+			if (Mathf.Round(damageTick*10)%2 == 1)
+				_object.transform.localScale = new Vector3(0,0,0);
+			else
+				_object.transform.localScale = new Vector3(1f,1f,1f);
+		}
+	}
+	
 	public void SetObject(GameObject _object) {
 		this._object = _object;
-		//GameObject _model = _object.transform.Find("Model").gameObject;
-		Rigidbody _rigidbody = _object.GetComponent<Rigidbody>();
+		//_model = _object.transform.Find("Model").gameObject;
+		_rigidbody = _object.GetComponent<Rigidbody>();
 		if (_rigidbody) {
 			this._rigidbody = _rigidbody;
 		}
@@ -93,16 +107,40 @@ public class Player {
 	}
 	
 	public void Shoot() {
-		if (shooting && shootTick >= shootCooldown) {
-			shootTick = 0f;
-			GameObject newBullet = GameObject.Instantiate(_bulletPrefab, _rigidbody.position, Quaternion.identity);
-			Rigidbody bulletRigidbody = newBullet.GetComponent<Rigidbody>();
-			newBullet.name = _bulletPrefab.name;
-			bulletRigidbody.AddForce(_object.transform.forward*_bulletSpeed, ForceMode.Impulse);
-			GameObject.Destroy(newBullet, _bulletLifetime);
+		if (_rigidbody) {
+			if (shooting && shootTick >= shootCooldown) {
+				shootTick = 0f;
+				GameObject newBullet = GameObject.Instantiate(_bulletPrefab, _rigidbody.position, Quaternion.identity);
+				Rigidbody bulletRigidbody = newBullet.GetComponent<Rigidbody>();
+				newBullet.name = _bulletPrefab.name;
+				newBullet.tag = "PlayerBullet";
+				bulletRigidbody.AddForce(_object.transform.forward*_bulletSpeed, ForceMode.Impulse);
+				GameObject.Destroy(newBullet, _bulletLifetime);
+			}
+			else {
+				shootTick += Time.deltaTime;
+			}
 		}
-		else {
-			shootTick += Time.deltaTime;
+	}
+	
+	public void OnTriggerEnter(Collider collide) {
+		GameObject bullet = collide.gameObject;
+		if (bullet && bullet.tag == "EnemyBullet") {
+			GameObject.Destroy(bullet);
+			TakeDamage(1);
+		}
+	}
+	
+	void TakeDamage(int amount) {
+		if (damageTick <= 0f) {
+			health -= amount;
+			damageTick = 2;
+		}
+	}
+	
+	public void CheckDead() {
+		if (_health <= 0) {
+			GameObject.Destroy(_object);
 		}
 	}
 	
