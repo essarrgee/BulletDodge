@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using TMPro;
 
 public class GameManager : MonoBehaviour {
@@ -70,6 +71,7 @@ public class GameManager : MonoBehaviour {
 		_player.Shooting();
 		CheckCanSpawnEnemy();
 		CheckCanIncreaseLevel();
+		CheckPlayerDead();
     }
 	
 	void FixedUpdate() {
@@ -141,5 +143,19 @@ public class GameManager : MonoBehaviour {
 	void UpdateHUD() {
 		_levelUI.text = "Level: " + Level;
 		_healthUI.text = "Health: " + _player.health;
+	}
+	
+	void CheckPlayerDead() {
+		if (_player == null || _player.health <= 0) {
+			Invoke("Restart", 1);
+		}
+	}
+	
+	public void Restart() {
+		SceneManager.LoadScene("Scene");
+	}
+	
+	void QuitGame() {
+		Application.Quit();
 	}
 }
